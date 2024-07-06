@@ -1,10 +1,24 @@
 use crate::devices::{Light, LightBucket};
+use log::debug;
 
 #[derive(Clone, Debug)]
 pub struct ElgatoClient {
   endpoint: String,
   client: reqwest::blocking::Client,
   pub light: Light,
+}
+
+impl Light {
+  pub fn get_status(&self) -> bool {
+    match self {
+      Light::Keylight(light) => {
+        light.on == 1
+      }
+      Light::LightStrip(light) => {
+        light.on == 1
+      }
+    }
+  }
 }
 
 impl ElgatoClient {
@@ -64,6 +78,48 @@ impl ElgatoClient {
       .json(&self.prepare_payload())
       .send()
       .unwrap();
+  }
+
+  pub fn set_temperature(&mut self, temperature: i32) {
+    match &self.light {
+      Light::Keylight(light) => {
+        let mut light = light.clone();
+        light.set_temperature(temperature);
+        self.light = Light::Keylight(light);
+      }
+      Light::LightStrip(light) => {
+        debug!("Temperature is not supported for LightStrip");
+      }
+    }
+
+    self
+      .client
+      .put(&self.endpoint)
+      .json(&self.prepare_payload())
+      .send()
+      .unwrap();
+  }
+
+  pub fn set_color(&mut self, saturation: f32, hue: f32) {
+    match &self.light {
+      Light::Keylight(_) => {
+        debug!("Color is not supported for Keylight");
+      }
+      Light::LightStrip(light) => {
+        let mut light = light.clone();
+        light.set_color(hue, saturation);
+        self.light = Light::LightStrip(light);
+      }
+    }
+
+    let response = self
+      .client
+      .put(&self.endpoint)
+      .json(&self.prepare_payload())
+      .send()
+      .unwrap();
+
+    debug!("{:?}", response.text());
   }
 
   fn prepare_payload(&self) -> LightBucket {

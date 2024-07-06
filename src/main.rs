@@ -2,10 +2,13 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use gtk::prelude::*;
-use gtk::{glib, Application, ApplicationWindow};
+use gtk::{glib, Application, ApplicationWindow, Label, Orientation};
 use gtk4 as gtk;
-use gtk4::{Label, Orientation};
 use log::debug;
+
+use crate::client::ElgatoClient;
+use crate::components::create_color_chooser;
+use crate::network::get_active_devices;
 
 mod client;
 mod components;
@@ -26,62 +29,67 @@ fn main() -> glib::ExitCode {
 }
 
 fn application_interface(app: &Application) {
-  let container = gtk::Box::new(Orientation::Vertical, 10);
+  let container = gtk::Box::new(Orientation::Vertical, 20);
+
   let window = ApplicationWindow::builder()
     .application(app)
     .title("Elgato Control Center de pobre")
     .default_width(400)
-    .default_height(600)
+    .default_height(300)
     .build();
+
+  let window = Rc::new(window);
 
   //let devices = get_active_devices();
   let devices = vec![
-    client::ElgatoClient::new("192.168.1.11"),
-    client::ElgatoClient::new("192.168.1.63"),
+    ElgatoClient::new("192.168.1.11"),
+    ElgatoClient::new("192.168.1.72"),
   ];
 
   for device in devices {
-    debug!("Device: {:?}", device);
-    let grid = gtk::Grid::builder()
+    debug!("Device: {:?}", device.light);
+    let grid = gtk::FlowBox::builder()
       .margin_start(6)
       .margin_end(6)
       .margin_top(6)
       .margin_bottom(6)
+      .min_children_per_line(4)
       .halign(gtk::Align::Start)
       .valign(gtk::Align::Start)
-      .row_spacing(6)
-      .column_homogeneous(true)
+
       .column_spacing(6)
       .build();
 
-    match &device.light {
-      devices::Light::Keylight(light) => {
-        debug!("Lightstrip: {:?}", light);
-        let client = Rc::new(RefCell::new(device));
+    let device = Rc::new(RefCell::new(device));
 
-        let button = components::toggle_button(client.clone());
+    let toggle_box = gtk::Box::new(Orientation::Vertical, 200);
+    toggle_box.append(&components::toggle_button(device.clone()));
 
-        let brightness_box = gtk::Box::new(Orientation::Horizontal, 100);
-        brightness_box.append(&components::create_brightness_scale(client.clone()));
+    let brightness_box = gtk::Box::new(Orientation::Horizontal, 100);
+    brightness_box.append(&components::create_brightness_scale(device.clone()));
+
+    match device.borrow().light {
+      devices::Light::Keylight(_) => {
+        let label = Label::new(Some("Keylight"));
+
+        container.append(&label);
 
         let temperature_box = gtk::Box::new(Orientation::Horizontal, 100);
-        temperature_box.append(&components::create_temperature_scale(client.clone()));
 
-        grid.attach(&button, 0, 1, 1, 4);
-        grid.attach(&brightness_box, 2, 2, 2, 1);
-        grid.attach(&temperature_box, 2, 3, 2, 1);
+        temperature_box.append(&components::create_temperature_scale(device.clone()));
+
+        grid.insert(&toggle_box, 1);
+        grid.insert(&brightness_box, 2);
+        grid.insert(&temperature_box, 2);
       }
-      devices::Light::LightStrip(light) => {
-        debug!("Lightstrip: {:?}", light);
-        let client = Rc::new(RefCell::new(device));
+      devices::Light::LightStrip(_) => {
+        container.append(&Label::new(Some("LightStrip")));
 
-        let button = components::toggle_button(client.clone());
+        let rgb_button = create_color_chooser(device.clone(), window.clone());
 
-        let brightness_box = gtk::Box::new(Orientation::Horizontal, 100);
-        brightness_box.append(&components::create_brightness_scale(client.clone()));
-
-        grid.attach(&button, 0, 1, 1, 4);
-        grid.attach(&brightness_box, 2, 2, 2, 1);
+        grid.insert(&toggle_box, 1);
+        grid.insert(&brightness_box, 2);
+        grid.insert(&rgb_button, 3);
       }
     }
     container.append(&grid);
@@ -95,5 +103,5 @@ fn application_interface(app: &Application) {
   title.set_text("Elgato Control Pobre");
 
   window.set_child(Some(&container));
-  window.present();
+  window.show();
 }

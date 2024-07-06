@@ -19,7 +19,6 @@ pub fn get_active_devices() -> Vec<ElgatoClient> {
     active_devices.append(&mut vec![client::ElgatoClient::new(
       device.to_string().as_str(),
     )]);
-    break;
   }
   active_devices
 }

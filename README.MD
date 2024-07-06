@@ -1,18 +1,28 @@
 # Elgato Control Center
 
+This repository aims to control all devices that can be handled in the Elgato Control Center.
 
-## Get Devices
+![Elgato Control Center](./.github/app.png)
+
+## Devices Tested
+
+- [x] Key Light
+- [x] Light-strip
+
+## Dev Notes
+
+### Get Devices
+
 - Fetch the network interfaces
 - Find the default network (I/O)
-- Scan the devices looking for
-  - Dexatek Technology
-  - (any other veexatek Technologyndor)
+- Scan the devices looking for 9123 opened ports
 
-## Application
+### Application
 
-Diff between lights: 
+Diff between lights:
 
-### Light Strip Payload
+#### Light Strip Payload
+
 ```json
 {
   "numberOfLights": 1,
@@ -27,7 +37,7 @@ Diff between lights:
 }
 ```
 
-### Keylight Payload 
+### Keylight Payload
 
 ```json
 {

@@ -4,8 +4,8 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
 pub struct LightStrip {
   pub on: u32,
-  pub hue: f64,
-  pub saturation: f64,
+  pub hue: f32,
+  pub saturation: f32,
   pub brightness: u32,
 }
 
@@ -49,6 +49,11 @@ impl LightStrip {
   pub fn set_brightness(&mut self, brightness: u32) {
     self.brightness = brightness;
   }
+
+  pub fn set_color(&mut self, hue: f32, saturation: f32) {
+    self.hue = hue;
+    self.saturation = saturation;
+  }
 }
 
 impl Keylight {
@@ -59,10 +64,9 @@ impl Keylight {
   pub fn set_brightness(&mut self, brightness: u32) {
     self.brightness = brightness;
   }
-}
 
-impl KeylightTrait for Keylight {
-  fn set_temperature(&mut self, temperature: i32) {
+  pub fn set_temperature(&mut self, temperature: i32) {
     self.temperature = temperature;
   }
 }
+
